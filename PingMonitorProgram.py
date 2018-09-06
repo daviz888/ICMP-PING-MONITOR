@@ -311,11 +311,11 @@ class IP_Op:
                 positiveCounter=0
             if negativeCounter==4 and negativeMailSent==False:
                 print("Negative mail was sent")
-                MyMailActivity.send_negative_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","sendto3@gmail.com"])
+                MyMailActivity.send_negative_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","#sendto3@gmail.com"])
                 negativeMailSent=True
             if positiveCounter==20 and negativeMailSent==True:
                 print("Positive mail was sent")
-                MyMailActivity.send_positive_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","sendto3@gmail.com"])
+                MyMailActivity.send_positive_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","#sendto3@gmail.com"])
                 negativeMailSent==False
 
 if __name__ == '__main__':
