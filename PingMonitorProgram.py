@@ -7,12 +7,27 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+#Several bugs wer solved in this program version.
+
+# To use the program you should do some changes in mail adresses. Please find comments in code to do it
+
 
 def main():
+    StartProgram=True
     ListToMonitor=initial_dialog()
-    print(ListToMonitor)
-    time.sleep(2)
-    while(True):
+    if(ListToMonitor==None):
+        print("File IpAdressList contains zero IPs, or is corrupted, or does not exist.\n\nThe program will be closed soon.")
+        StartProgram=False
+        time.sleep(7)
+    elif(len(ListToMonitor)==0):
+        print("File IpAdressList contains zero IPs, or is corrupted, or does not exist.\n\nThe program will be closed soon.")
+        StartProgram=False
+        time.sleep(7)
+    if  StartProgram:
+        print(f"The following list is monitored: {ListToMonitor}")
+        time.sleep(3)
+        print("\n\nMonitoring has started! \n\n")
+    while(StartProgram):
         c=[]
         for i in ListToMonitor:
             c.append(threading.Thread(target=IP_Op.do_infinite_ping, args=(i,3)))                    
@@ -23,8 +38,9 @@ def main():
 
 
 def initial_dialog():
-    print("***** The program is used for remote IPs ping monitoring *****")
-    print("Do you want to do make any initial setup for the program?\nIf yes print yes, otherwise print no\n")
+    print("******** The program is used for remote IPs ping monitoring ********")
+    print("******** The program is designed only for Windows OS **********\n")
+    print("Do you want to do any initial setup? If yes print yes, otherwise print no.\n")
     bool1=True
     while(bool1):
         a=str(input())
@@ -33,22 +49,29 @@ def initial_dialog():
             while(bool2):
                 b=IP_Op.ask_ip()
                 IP_Op.add_ip_tofile(address=b,file="IpAdressList")
-                bool2=IP_Op.do_you_need_more_ip()
+                if(b[1]==True):
+                    bool2=IP_Op.do_you_need_more_ip()
+                else:
+                    bool2=False
                 n=IP_Op.what_ip_ismonitored(file="IpAdressList")
+                if(n[1]==False):
+                    bool1=False                   
             bool3=True
-            while(bool3):
-                IP_Op.remove_ip_address(file="IpAdressList",adressList=n)
-                bool3=IP_Op.do_you_need_remove_more_ip()
+            while(bool3 and bool1):
+                removeMore=IP_Op.remove_ip_address(file="IpAdressList",adressList=n[0]) 
+                if(removeMore):
+                    bool3=IP_Op.do_you_need_remove_more_ip()
+                else:
+                    bool3=False
             bool1=False
         elif(a.lower()=="no"):
-            print("You chose no, no initial setup will be made\n")
+            print("You chose no, no initial setup will be made.\n")
             IP_Op.what_ip_ismonitored(file="IpAdressList")  
             bool1=False
         else:
             print("Incorrect input, you should press only yes or now. Try again please\n")
     resultList=IP_Op.read_ip_from_file(file="IpAdressList")
-    time.sleep(3)
-    print("\n\n Monitoring has started! \n\n") 
+    time.sleep(1) 
     return resultList   
 
 def good_time(localtime,mode):
@@ -86,18 +109,24 @@ class MyMailActivity:
     def send_negative_mail(ipAddress,email_sender,email_receiver):
         ipAddress=str(ipAddress)
         time1str=good_time(localtime=time.localtime(),mode=0)
-        subject=f"MTT Oy error notification {time1str}"
+        
+        #Print your own subject:
+        subject=f"Your error notification {time1str}"
         msg = MIMEMultipart() 
         msg['From'] = email_sender
         msg['To'] = ", ".join(email_receiver)
         msg['Subject']= subject
-        body=f"Dear Partner,\n\nWe observe that address {ipAddress} is not reachable within last 30 seconds. Now {time1str}.\n\nWe ask you to investigate the issue and undertake all necessary steps to solve the problem.\n\nBest Regards,\nMTT Oy Network Monitor Robot"
+        body=f"Dear Partner,\n\nWe observe that address {ipAddress} is not reachable within last 30 seconds. Now {time1str}.\nt"
+
         msg.attach(MIMEText(body, 'plain'))
         text = msg.as_string()  
-
+        
+        # Put you email server settings  
         connection = smtplib.SMTP('smtp.gmail.com', 587) 
-        connection.starttls()  
-        connection.login(email_sender, '#YourMailBoxPassword')
+        connection.starttls()
+        
+        #Put your e-mail server password below:
+        connection.login(email_sender, 'YourPassword')
         connection.sendmail(email_sender, email_receiver, text)
         connection.quit()
 
@@ -110,13 +139,14 @@ class MyMailActivity:
         msg['From'] = email_sender
         msg['To'] = ", ".join(email_receiver)
         msg['Subject']= subject
-        body=f"Dear Partner,\n\nWe observe that address {ipAddress} has recovered and is stable within last 60 seconds. Now {time1str}.\n\nWe ask you to investigate and provide us RFO.\n\nBest Regards,\nMTT Oy Network Monitor Robot"
+        body=f"Dear Partner,\n\nWe observe that address {ipAddress} has recovered and is stable within last 60 seconds. Now {time1str}.\n"
+
         msg.attach(MIMEText(body, 'plain'))
         text = msg.as_string()  
 
         connection = smtplib.SMTP('smtp.gmail.com', 587) 
         connection.starttls()  
-        connection.login(email_sender, '#YourMailBoxPassword')
+        connection.login(email_sender, 'Samara12345')
         connection.sendmail(email_sender, email_receiver, text)
         connection.quit()
 
@@ -126,14 +156,14 @@ class IP_Op:
         '''The fuction is used to ask user to  provide Ip address for the program'''
         check1=True
         while(check1):
-            print("What ip address would you like to choose for monitoring? \nIf you do not want to add any IP,\nPlease press any button and follow to next recommendations")
+            print("What ip address would you like to choose for monitoring? \n\nIf you do not want to add any ip address:\nPress any button and follow to next recommendations.\n")
             a=str(input())
             try:
                 address1=ipaddress.IPv4Address(address=str(a))
             except  ipaddress.AddressValueError:
-                print(sys.exc_info())
-                print("You entered incorrect ip address please try to enter ip address again \n\n")
-                print("If you do not want to enter ip address print no\nIf you still want to add any other ip address,\nPlease press any other key")
+                #print(sys.exc_info()) - good command to use in your code 
+                print("You entered incorrect ip address please try to enter ip address again. \n\n")
+                print("If you do not want to enter ip address print no.\nIf you still want to add any other ip address, press any other key.")
                 word=input()
                 if str(word).upper()=="NO":
                     check1=False
@@ -157,24 +187,29 @@ class IP_Op:
 
     def what_ip_ismonitored(file):
         '''The funtcion shows what IPs are monitored in file and retruns list of ip addressess which is monitored'''
+        ToContinue=True
         try:
             with open(file+".txt",mode="r") as f:
                 b=[]
                 for i in f:
-                    #b.append(f.readline().strip())
                     b.append(i.strip())
                 f.seek(0)
         except FileNotFoundError:
-            print("The file is not reachable!")
+            print("The file IpAdressList.txt is not reachable or corrupted.\nTry to delete IpAdressList.txt if it exists and do initial setup process.\nThe program will be closed soon.\n")
+            ToContinue=False
+            time.sleep(3)
+            b=[]
+            return (b,ToContinue)
         else:
-            print("The following List of ip adresses is monitored now")
+            print("The following List of ip adresses will be monitored:")
             for i in b:
                 print(i)
-            return b
+            print("\n")
+            return (b,ToContinue)
         
     def do_you_need_more_ip():
         '''Just asks whether the user want more IPs to monitor'''
-        print("Do yo want to add more IP? Print yes or no")
+        print("Do yo want to add more IP? Print yes or no.\n")
         a=""
         while(str(a).lower()!="yes" or str(a).lower()!="no" ):
             a=input()
@@ -187,7 +222,7 @@ class IP_Op:
                 
     def do_you_need_remove_more_ip():
         '''Just asks whether the user want remove more IPs from monitoring'''
-        print("Do yo want to remove more IP? Print yes or no")
+        print("Do yo want to remove more IP? Print yes or no.\n")
         a=""
         while(str(a).lower()!="yes" or str(a).lower()!="no" ):
             a=input()
@@ -200,17 +235,18 @@ class IP_Op:
                 
     def remove_ip_address(file,adressList):
         '''The function is used to remove Ip addressess from file'''
-        print("Do you want to remove any ip addresses? Print only yes or no")
+        print("Do you want to remove any ip addresses? Print only yes or no.")
         a=""
         bool1=True
         while(bool1==True):
             a=input()
             if str(a).lower()=="yes":
-                print("You chose yes, please see below list of IP which can be removed")
+                print("You chose yes, please see below list of IP which can be removed.")
                 IP_Op.what_ip_ismonitored(file)
-                print("Choose ip to remove and print it")
+                print("Choose ip to remove and print it:")
                 text=""
                 bool2=True
+                removeMoreIP=True
                 while(bool2):
                     text=str(input())
                     if(str(text) in adressList):             
@@ -220,23 +256,28 @@ class IP_Op:
                                 f.write(f"{i}\n")
                         bool1=False
                         bool2=False
+                        removeMoreIP=True
                     else:
-                        print("The ip address should be in the list. Please try again")
-                        print("If you have changed your mind. Print yes.If other is printed, it is considered as no")
+                        print("The ip address should be in the list. Please try again.\n")
+                        print("If you do not want to remove any IP print yes. If other is printed, it is considered as no.\n")
                         test=str(input())
                         if test.lower()=="yes":    
                             bool1=False
                             bool2=False
+                            removeMoreIP=False
                         else:
-                            print("You chose no then try again please")
+                            print("You chose no then try again please.\n")
+                            removeMoreIP=True
                         
             elif str(a).lower()=="no":
-                print("You chose no, no ip adressess will be removed")
+                print("You chose no, no ip adressess will be removed.\n")
                 bool1=False
+                removeMoreIP=False
             else:
-                print("You should print only yes or no\n")
-                
-                
+                print("You should print only yes or no.\n")
+                removeMoreIP=True
+            return removeMoreIP
+                     
     def read_ip_from_file(file):
         '''The function is used to read Ip addresses from file and return it is list'''
         try:
@@ -246,7 +287,7 @@ class IP_Op:
                     b.append(i.strip())
                 f.seek(0)
         except FileNotFoundError:
-            print("The file is not reachable!")
+            print("The file IpAdressList.txt is not reachable or corrupted.\nTry to delete IpAdressList.txt if it exists and do initial setup process.\nThe program will be closed soon.\n")
         else:
             return b
         
@@ -311,12 +352,16 @@ class IP_Op:
                 positiveCounter=0
             if negativeCounter==4 and negativeMailSent==False:
                 print("Negative mail was sent")
-                MyMailActivity.send_negative_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","#sendto3@gmail.com"])
+                # Put below emails information 
+                MyMailActivity.send_negative_mail(f"{b}","Youremailsentfrom@gmail.com",["Yourmailsendto1@gmail.com","Yourmailsendto2@gmail.com"])
                 negativeMailSent=True
             if positiveCounter==20 and negativeMailSent==True:
                 print("Positive mail was sent")
-                MyMailActivity.send_positive_mail(f"{b}","#sendfrom@gmail.com",["#sendto1@gmail.com","#sendto2@gmail.com","#sendto3@gmail.com"])
-                negativeMailSent==False
+                # Put below emails information 
+                MyMailActivity.send_positive_mail(f"{b}","Youremailsentfrom@gmail.com",["Yourmailsendto1@gmail.com","Yourmailsendto2@gmail.com"])
+                negativeMailSent=False
 
 if __name__ == '__main__':
     main()
+
+
