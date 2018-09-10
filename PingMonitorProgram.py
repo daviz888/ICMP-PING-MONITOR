@@ -1,4 +1,4 @@
-# Before start using the program you should setup it for yourself. Find all comments which contain Attention word in the file
+# Before start usingthe program you should setup it for yourself. Find all comments which contain Attention word in the file
 # and do the needfull steps which are described in the marked comments.
 # Please do not use mailboxes, to send notiffication messages from, with two stage authentification.
 # If you struggle any difficulties to setup the program for yourself, feel free to apply kozirev8@gmail.com
@@ -14,8 +14,19 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-
 def main():
+    while(True):
+        circle()
+
+def key_press(e):
+    a=input()
+    e.clear()
+    
+    
+
+def circle():
+    e=threading.Event()
+    e.set()
     '''This is main function of the program'''
     StartProgram=True # checks if the problem can be started without errors
     ListToMonitor=initial_dialog() #as a result we get list of ips to use in monitoring
@@ -34,12 +45,16 @@ def main():
     while(StartProgram):
         c=[]
         for i in ListToMonitor:
-            c.append(threading.Thread(target=IP_Op.do_infinite_ping, args=(i,3))) #create independent thread for each ip address
+            c.append(threading.Thread(target=IP_Op.do_infinite_ping, args=(e,i,3,))) #create independent thread for each ip address
             # i is ip address from list, 3 is a delay between pings
+        c.append(threading.Thread(target=key_press,args=(e,)))
         for i in c:
             i.start()
         for i in c:
             i.join() # since fuction iside thread is infinite, join will never happen
+        print("It is the end!")
+        time.sleep(15)
+        StartProgram=False
 
 
 def initial_dialog():
@@ -134,7 +149,7 @@ class MyMailActivity:
 
         connection = smtplib.SMTP('smtp.gmail.com', 587) # Attention! This should be settings of you smtp server
         connection.starttls()  
-        connection.login(email_sender, 'YourPasswordOfTheMailboxYouWillSendMailsFrom') # Attention! Put password of your mailbox to send mails about alarms from
+        connection.login(email_sender, '1111111') # Attention! Put password of your mailbox to send mails about alarms from
         connection.sendmail(email_sender, email_receiver, text)
         connection.quit()
 
@@ -157,7 +172,7 @@ class MyMailActivity:
 
         connection = smtplib.SMTP('smtp.gmail.com', 587) # Attention! This should be settings of you smtp server
         connection.starttls()  
-        connection.login(email_sender, 'YourPasswordOfTheMailboxYouWillSendMailsFrom') # Attention! Put password of your mailbox to send mails about alarms from
+        connection.login(email_sender, '111111') # Attention! Put password of your mailbox to send mails about alarms from
         connection.sendmail(email_sender, email_receiver, text)
         connection.quit()
 
@@ -342,14 +357,14 @@ class IP_Op:
                 return(0,1)
         
     
-    def do_infinite_ping(b,t100):
+    def do_infinite_ping(e,b,t100):
         '''Do infinite ping of the remote IP every t100 seconds'''
         negativeMailSent=False
         positiveCounter=0 #is used to send positive or negative mail
         negativeCounter=0 #is used to send positive or negative mail
         positivePingAttempts=0 # total counter, became 0 every hour
         negativePingAttempts=0 # total counter, became 0 every hour
-        while(True):
+        while(e.is_set()):
             p1=IP_Op.do_ping(b,t100) # we recive tuple as a results of the function 1,0 if successful, 0,1 if failes
             positivePingAttempts=positivePingAttempts+p1[0]
             negativePingAttempts=negativePingAttempts+p1[1]
@@ -382,12 +397,12 @@ class IP_Op:
             if negativeCounter==3 and negativeMailSent==False:
                 print("Negative mail was sent")
                 # Attention! Put your own mail settings in the code below, do not remove f"{b}":
-                MyMailActivity.send_negative_mail(f"{b}","YourMailBoxToSendMailNotificationsFrom@gmail.com",["Mailbox1ToSendNotificationsTo@gmail.com","Mailbox2ToSendNotificationsTo@gmail.com","Mailbox3ToSendNotificationsTo@gmail.com"])
+                MyMailActivity.send_negative_mail(f"{b}","111111@gmail.com",["22222@gmail.com","222322@gmail.com","44444@22222@gmail.com"])
                 negativeMailSent=True
             if positiveCounter==20 and negativeMailSent==True:
                 print("Positive mail was sent")
                 # Attention!Put your own mail settings in the code below, do not remove f"{b}":
-                MyMailActivity.send_positive_mail(f"{b}","YourMailBoxToSendMailNotificationsFromr@gmail.com",["Mailbox1ToSendNotificationsTo@gmail.com","Mailbox2ToSendNotificationsTo@gmail.com","Mailbox3ToSendNotificationsTo@gmail.com"])
+                MyMailActivity.send_positive_mail(f"{b}","111111@gmail.com",["22222@gmail.com","222322@gmail.com","44444@22222@gmail.com"])
                 negativeMailSent=False
 
 if __name__ == '__main__':
